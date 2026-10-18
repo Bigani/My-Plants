@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Plants</title>
+<meta name="description" content="Care guide and watering tracker for my houseplants.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6ef;
+    --surface: #ffffff;
+    --surface-2: #f0f3e8;
+    --ink: #1f2a1f;
+    --ink-2: #566355;
+    --line: #e1e6d6;
+    --accent: #2f7d4f;
+    --accent-ink: #ffffff;
+    --water: #2a7fc4;
+    --ok: #3f9b5f;
+    --warn: #d99a1e;
+    --bad: #cf4b3f;
+    --shadow: 0 1px 2px rgba(31,42,31,.06), 0 8px 24px rgba(31,42,31,.07);
+    --card-l1: 86%; --card-l2: 74%;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121712;
+      --surface: #1b231b;
+      --surface-2: #232d23;
+      --ink: #e9f0e6;
+      --ink-2: #a2b0a0;
+      --line: #2c372c;
+      --accent: #5cc283;
+      --accent-ink: #0d1a11;
+      --water: #5aaee8;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+      --card-l1: 28%; --card-l2: 20%;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121712;
+    --surface: #1b231b;
+    --surface-2: #232d23;
+    --ink: #e9f0e6;
+    --ink-2: #a2b0a0;
+    --line: #2c372c;
+    --accent: #5cc283;
+    --accent-ink: #0d1a11;
+    --water: #5aaee8;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --card-l1: 28%; --card-l2: 20%;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 16px; }
+
+  /* ---------- Header ---------- */
+  header { padding: 40px 0 8px; }
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    line-height: 1.05;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .sub { color: var(--ink-2); margin: 0; max-width: 52ch; }
+  .icon-btn {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-size: 18px;
+    display: grid; place-items: center; flex: none;
+  }
+  .icon-btn:hover { background: var(--surface-2); }
+
+  .summary {
+    margin-top: 22px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .stat b { display: block; font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1; }
+  .stat span { color: var(--ink-2); font-size: .85rem; }
+  .stat.due b { color: var(--bad); }
+  .stat.due.zero b { color: var(--ok); }
+
+  /* ---------- Controls ---------- */
+  .controls {
+    position: sticky; top: 0; z-index: 5;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 14px 0; margin-top: 10px;
+    border-bottom: 1px solid transparent;
+  }
+  .controls .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .search {
+    flex: 1 1 220px; min-width: 0;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 999px; padding: 10px 16px; font: inherit;
+  }
+  .search:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+    border-radius: 999px; padding: 8px 14px; font: inherit; font-size: .85rem; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 3px; }
+  .seg button {
+    border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: .85rem;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); }
+
+  /* ---------- Grid & cards ---------- */
+  .grid {
+    display: grid; gap: 20px; padding: 18px 0 56px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 560px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 860px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1140px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+    overflow: hidden; box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  @media (hover: hover) { .card:hover { transform: translateY(-3px); } }
+
+  .hero {
+    position: relative; height: 128px; overflow: hidden;
+    background: linear-gradient(135deg,
+      hsl(var(--h) 52% var(--card-l1)),
+      hsl(calc(var(--h) + 28) 48% var(--card-l2)));
+  }
+  .hero.photo { height: 250px; cursor: zoom-in; }
+  .hero.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+  @media (hover: hover) { .card:hover .hero.photo img { transform: scale(1.04); } }
+  .hero.photo::before, .hero.photo::after { display: none; }
+  .hero.photo .shade { position: absolute; inset: auto 0 0 0; height: 70px; background: linear-gradient(transparent, rgba(0,0,0,.35)); }
+  .hero.photo .emoji { font-size: 34px; bottom: 10px; z-index: 1; }
+  .hero::before, .hero::after {
+    content: ""; position: absolute; border-radius: 50%;
+    background: hsl(var(--h) 60% 96% / .28);
+  }
+  .hero::before { width: 170px; height: 170px; right: -50px; top: -70px; }
+  .hero::after { width: 110px; height: 110px; left: -30px; bottom: -60px; }
+  .emoji {
+    position: absolute; left: 18px; bottom: 12px; font-size: 58px; line-height: 1;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,.18));
+  }
+  .badges { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    font-size: .72rem; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+    background: rgba(255,255,255,.85); color: #243024; backdrop-filter: blur(4px);
+  }
+  .badge.toxic { background: #fde8e4; color: #8e2a1f; }
+  .badge.safe { background: #e1f4e6; color: #1f6038; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .badge { background: rgba(20,28,20,.82); color: #e9f0e6; }
+    :root:not([data-theme="light"]) .badge.toxic { background: #4a2420; color: #ffc9c0; }
+    :root:not([data-theme="light"]) .badge.safe { background: #1e3b28; color: #b6ecc8; }
+  }
+  :root[data-theme="dark"] .badge { background: rgba(20,28,20,.82); color: #e9f0e6; }
+  :root[data-theme="dark"] .badge.toxic { background: #4a2420; color: #ffc9c0; }
+  :root[data-theme="dark"] .badge.safe { background: #1e3b28; color: #b6ecc8; }
+
+  .body { padding: 16px 18px 6px; flex: 1; }
+  .card h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; line-height: 1.2; margin: 0; }
+  .latin { color: var(--ink-2); font-style: italic; font-size: .88rem; margin: 2px 0 0; }
+  .note-top { color: var(--ink-2); font-size: .88rem; margin: 10px 0 0; }
+
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .fact { background: var(--surface-2); border-radius: 12px; padding: 9px 11px; }
+  .fact small { display: block; color: var(--ink-2); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; }
+  .fact span { font-weight: 600; font-size: .9rem; }
+
+  .water { margin: 14px 18px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; }
+  .water-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .water-head strong { font-size: .95rem; }
+  .water-head .status { font-size: .8rem; font-weight: 600; }
+  .status.ok { color: var(--ok); } .status.warn { color: var(--warn); } .status.bad { color: var(--bad); } .status.idle { color: var(--ink-2); }
+  .bar { height: 8px; border-radius: 99px; background: var(--surface-2); margin: 10px 0 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--ok); transition: width .4s ease; }
+  .bar i.warn { background: var(--warn); } .bar i.bad { background: var(--bad); }
+  .water-actions { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    border: 0; border-radius: 999px; padding: 9px 14px; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+    background: var(--water); color: #fff; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink-2); font-weight: 500; padding: 9px 8px; }
+  .last { margin-left: auto; font-size: .78rem; color: var(--ink-2); }
+
+  details { margin: 12px 18px 18px; border-top: 1px solid var(--line); }
+  summary { cursor: pointer; padding: 12px 0 4px; font-weight: 600; font-size: .9rem; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-size: 1.3rem; color: var(--ink-2); line-height: 1; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  .care dl { margin: 8px 0 0; display: grid; gap: 10px; }
+  .care dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+  .care dd { margin: 1px 0 0; font-size: .9rem; }
+  .care ul { margin: 6px 0 0; padding-left: 18px; font-size: .88rem; }
+  .care li { margin-bottom: 3px; }
+  .watch { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 16%, transparent); font-size: .86rem; }
+
+  dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+  dialog.lightbox::backdrop { background: rgba(0,0,0,.8); }
+  dialog.lightbox img { display: block; max-width: 96vw; max-height: 92vh; border-radius: 14px; }
+  dialog.lightbox p { color: #fff; text-align: center; margin: 8px 0 0; font-size: .9rem; }
+  .empty { text-align: center; color: var(--ink-2); padding: 60px 0; grid-column: 1 / -1; }
+  footer { color: var(--ink-2); font-size: .82rem; padding: 0 0 40px; }
+  footer p { margin: 0 0 6px; max-width: 70ch; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>My Plants</h1>
+        <p class="sub">Care cards and a simple watering tracker for everything growing at home. Tap “Watered today” and the card keeps count for you.</p>
+      </div>
+      <button class="icon-btn" id="theme" aria-label="Toggle light / dark theme" title="Toggle theme">◐</button>
+    </div>
+    <div class="summary" id="summary"></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="row">
+      <input class="search" id="search" type="search" placeholder="Search plants…" aria-label="Search plants">
+      <div class="seg" role="group" aria-label="Season">
+        <button type="button" data-season="grow">☀️ Growing season</button>
+        <button type="button" data-season="rest">❄️ Resting season</button>
+      </div>
+    </div>
+    <div class="chips" id="chips" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid" aria-live="polite"></div>
+</main>
+
+<dialog class="lightbox" id="lightbox"><img alt=""><p></p></dialog>
+
+<footer>
+  <div class="wrap">
+    <p><b>Golden rule:</b> these intervals are a starting point. Push a finger 2–3 cm into the soil — if it’s still damp, wait a few more days. Always water thoroughly and let the excess drain out.</p>
+    <p>Growing season = roughly April–September, resting season = October–March (the page picks automatically, you can switch it). Watering history is saved only in this browser.</p>
+  </div>
+</footer>
+
+<script>
+/* =========================================================
+   PLANT DATA — edit or add plants here.
+   waterDays: [growing season, resting season] in days
+   light: 1 = low, 2 = medium, 3 = bright
+   ========================================================= */
+const PLANTS = [
+  {
+    id: "asparagus", img: "Assets/Asparagus fern.jpg", name: "Asparagus Fern", latin: "Asparagus mix", emoji: "🌿", hue: 140,
+    lightLabel: "Bright, indirect", light: 3, difficulty: "Easy", pets: "toxic",
+    waterDays: [7, 14],
+    intro: "Feathery, cloud-like foliage. Its fleshy tubers store water, so it forgives a missed watering better than a soggy pot.",
+    water: "Water when the top 2–3 cm are dry. Soak thoroughly, then let it drain.",
+    humidity: "Average to high — mist or group with other plants.",
+    temp: "15–24 °C",
+    feed: "Half-strength liquid fertiliser monthly, spring to summer.",
+    soil: "Light, well-draining potting mix.",
+    tips: ["Yellowing, dropping fronds usually mean too little light or too dry air.", "Cut old brown stems to the base to encourage fresh shoots.", "Repot when tubers crowd the pot — they can even push it apart."],
+    watch: "Sap and berries are toxic to cats and dogs; some people get skin irritation from the sap."
+  },
+  {
+    id: "zebra", img: "Assets/Aphelandra moved.jpg", name: "Zebra Plant", latin: "Aphelandra squarrosa", emoji: "🦓", hue: 95,
+    lightLabel: "Bright, indirect", light: 3, difficulty: "Fussy", pets: "safe",
+    waterDays: [5, 8],
+    intro: "Glossy dark leaves with bold white veins and, if you’re lucky, a golden flower spike. Beautiful but a bit of a diva.",
+    water: "Keep evenly moist, never soggy and never bone dry. Water as soon as the surface starts to dry.",
+    humidity: "High (60 %+) — a pebble tray or humidifier helps a lot.",
+    temp: "18–24 °C, never below 15 °C",
+    feed: "Every 2 weeks in spring and summer.",
+    soil: "Rich, airy, peat-based mix that holds moisture but drains.",
+    tips: ["Lower leaves dropping often means it was allowed to dry out once.", "Trim the stems back after flowering to keep it bushy.", "Keep away from drafts and heaters."],
+    watch: "Crispy leaf edges = air too dry. Drooping + mushy base = too wet."
+  },
+  {
+    id: "adansonii", img: "Assets/Monstera adansonii.jpg", name: "Swiss Cheese Vine", latin: "Monstera adansonii", emoji: "🧀", hue: 150,
+    lightLabel: "Bright, indirect", light: 3, difficulty: "Easy", pets: "toxic",
+    waterDays: [7, 12],
+    intro: "A fast climber with leaves full of natural holes. Give it something to climb and it gets noticeably bigger leaves.",
+    water: "Water when the top 3–5 cm of soil are dry.",
+    humidity: "Likes 50 %+ but copes with normal room air.",
+    temp: "18–28 °C",
+    feed: "Monthly in the growing season.",
+    soil: "Chunky aroid mix — potting soil with perlite and bark.",
+    tips: ["Add a moss pole or trellis for bigger, more holey leaves.", "Cuttings with a node root easily in water.", "Wipe the leaves now and then so they can photosynthesise."],
+    watch: "Leaves are toxic if chewed by pets. Yellowing leaves usually point to overwatering."
+  },
+  {
+    id: "spider", img: "Assets/Spider plant.jpg", name: "Spider Plant", latin: "Chlorophytum", emoji: "🕷️", hue: 118,
+    lightLabel: "Medium to bright, indirect", light: 2, difficulty: "Easy", pets: "safe",
+    waterDays: [7, 14],
+    intro: "Nearly indestructible and endlessly generous with baby “spiderettes”. A classic for a reason.",
+    water: "Water when the top 2–3 cm are dry. Thick roots store water, so it tolerates short dry spells.",
+    humidity: "Average household humidity is fine.",
+    temp: "13–27 °C",
+    feed: "Every month or two in spring and summer.",
+    soil: "Standard potting mix with a bit of perlite.",
+    tips: ["Brown tips are usually caused by fluoride/chlorine in tap water — use filtered or rested water.", "Pot up the plantlets on the ends of the stems for free new plants.", "Repot when roots poke out of the drainage holes."],
+    watch: "Pale, floppy leaves mean too little light; brown tips mean tap water or very dry air."
+  },
+  {
+    id: "rosso", img: "Assets/Peperomia rosso.jpg", name: "Peperomia Rosso", latin: "Peperomia caperata ‘Rosso’", emoji: "🍷", hue: 350,
+    lightLabel: "Medium to bright, indirect", light: 2, difficulty: "Easy", pets: "safe",
+    waterDays: [10, 16],
+    intro: "Small, puckered leaves with deep green tops and wine-red undersides. Compact and low-maintenance.",
+    water: "Let the top half of the soil dry out. The thick leaves store water, so err on the dry side.",
+    humidity: "Average; appreciates a little extra but doesn’t need it.",
+    temp: "16–27 °C",
+    feed: "Every 4–6 weeks, half-strength, spring to summer.",
+    soil: "Light, fast-draining mix; small pot with drainage.",
+    tips: ["Shallow roots — a small pot is plenty, don’t over-pot.", "Too much direct sun bleaches the colour.", "Bottom-watering works nicely."],
+    watch: "Overwatering is the one thing that kills it: mushy stems and dropping leaves."
+  },
+  {
+    id: "fittonia", name: "Nerve Plant in a Jar", latin: "Fittonia verschaffeltii", emoji: "🌱", hue: 330,
+    lightLabel: "Medium to bright, no direct sun", light: 2, difficulty: "Moderate", pets: "safe",
+    waterDays: [21, 35],
+    intro: "A mini terrarium. In a closed jar it recycles its own moisture, so it needs far less water than a potted Fittonia.",
+    water: "If the jar is closed: add a small splash only when the soil looks dry and there’s no condensation (roughly every 3–5 weeks). If open: every 5–7 days.",
+    humidity: "Loves it — a closed jar gives it exactly that.",
+    temp: "18–26 °C",
+    feed: "Rarely — a very diluted drop once every 6–8 weeks, or not at all.",
+    soil: "Peat-based mix over a drainage layer (gravel or LECA), ideally with a thin charcoal layer.",
+    tips: ["Never put the jar in direct sun — glass heats up and cooks the plant.", "Heavy condensation all day = too wet; open the lid for a few hours.", "Pinch the tips to keep it compact and bushy."],
+    watch: "It dramatically wilts when thirsty and bounces back within hours of watering. Mouldy spots mean too wet and too little airflow — ventilate."
+  },
+  {
+    id: "dracaena", img: "Assets/Dracaena fragrans.jpg", name: "Corn Plant", latin: "Dracaena fragrans", emoji: "🌴", hue: 105,
+    lightLabel: "Low to bright, indirect", light: 2, difficulty: "Easy", pets: "toxic",
+    waterDays: [10, 18],
+    intro: "A tough, tree-like plant with arching, strap-shaped leaves — the kind that quietly thrives on a bit of neglect.",
+    water: "Water when the top 5 cm are dry. Allow it to drain well; it hates sitting in water.",
+    humidity: "Average.",
+    temp: "18–27 °C",
+    feed: "Monthly, spring to summer.",
+    soil: "Free-draining potting mix.",
+    tips: ["Sensitive to fluoride — filtered or rested water avoids brown tips.", "Lower leaves yellowing and dropping over time is normal.", "Wipe the leaves with a damp cloth; dust blocks light."],
+    watch: "Toxic to cats and dogs. Soft trunk or drooping leaves = overwatered."
+  },
+  {
+    id: "tornado", img: "Assets/Dracaena Tornado.jpg", name: "Dracaena ‘Tornado’", latin: "Dracaena ‘Tornado’", emoji: "🌪️", hue: 75,
+    lightLabel: "Medium to bright, indirect", light: 2, difficulty: "Easy", pets: "toxic",
+    waterDays: [10, 18],
+    intro: "A compact, twisting rosette of broad leaves striped in lime and deep green. Slow-growing and happy to be left alone.",
+    water: "Water when the top 4–5 cm are dry, then let it drain completely. It prefers a little too dry over a little too wet.",
+    humidity: "Average household humidity.",
+    temp: "18–27 °C",
+    feed: "Monthly at half strength, spring to summer.",
+    soil: "Free-draining potting mix with some perlite.",
+    tips: ["The lime striping is brightest in good, bright indirect light; direct midday sun scorches it.", "Use filtered or rested water — dracaenas get brown tips from fluoride.", "Wipe the broad leaves to keep them glossy."],
+    watch: "Toxic to cats and dogs. Yellow, soft leaves mean overwatering."
+  },
+  {
+    id: "alocasia", name: "Alocasia Polly", latin: "Alocasia × amazonica", emoji: "🗡️", hue: 165,
+    lightLabel: "Bright, indirect", light: 3, difficulty: "Fussy", pets: "toxic",
+    waterDays: [7, 12],
+    intro: "Arrow-shaped, dark leaves with sharp white veins. Dramatic and a little demanding.",
+    water: "Keep lightly moist in the growing season but never soggy — water when the top 2–3 cm are dry. Cut back clearly in winter.",
+    humidity: "High (60 %+). A humidifier or pebble tray is a big help.",
+    temp: "18–27 °C, keep above 15 °C",
+    feed: "Every 2–4 weeks at half strength in the growing season; none in winter.",
+    soil: "Very airy aroid mix with bark and perlite.",
+    tips: ["It may drop leaves or go semi-dormant in winter — reduce water, don’t panic.", "Check leaf undersides regularly for spider mites.", "Wipe leaves instead of misting them."],
+    watch: "Toxic to pets and irritating to skin and mouth (calcium oxalate). Brown, crispy edges = too dry or low humidity."
+  },
+  {
+    id: "yucca", img: "Assets/Yucca elephantipes.jpg", focus: "50% 30%", name: "Yucca", latin: "Yucca elephantipes", emoji: "🌴", hue: 60,
+    lightLabel: "Bright, some direct sun", light: 3, difficulty: "Easy", pets: "toxic",
+    waterDays: [14, 28],
+    intro: "A young yucca on a short, sturdy trunk topped with a rosette of leaves. It stores water in the trunk and loves a bright spot.",
+    water: "Soak, then let it dry out completely before watering again. Its small pot dries faster than a big one, so check the soil regularly — and water very little in winter.",
+    humidity: "Low is fine.",
+    temp: "10–30 °C",
+    feed: "Every 4–6 weeks in spring and summer.",
+    soil: "Cactus / succulent mix or potting soil with plenty of grit.",
+    tips: ["Never leave water standing in the saucer.", "Pot up when the roots fill the pot, usually every 2–3 years.", "Needs as much light as you can give it to stay compact."],
+    watch: "Soft trunk base or mushy roots = rot from overwatering. Mildly toxic to pets."
+  },
+  {
+    id: "pilea", img: "Assets/Pilea peperomioides.jpg", name: "Chinese Money Plant", latin: "Pilea peperomioides", emoji: "🍃", hue: 125,
+    lightLabel: "Bright, indirect", light: 3, difficulty: "Easy", pets: "safe",
+    waterDays: [7, 12],
+    intro: "Round, coin-like leaves on slender stalks, and a steady stream of baby plants around the base.",
+    water: "Water when the top 3–4 cm are dry. Soak and drain.",
+    humidity: "Average.",
+    temp: "15–25 °C",
+    feed: "Monthly in spring and summer.",
+    soil: "Well-draining mix with some perlite.",
+    tips: ["Rotate a quarter turn each week so it doesn’t lean toward the window.", "Separate pups when they’re about 5 cm tall and pot them up.", "Curling leaves can mean cold, overwatering or too much direct sun."],
+    watch: "Leaves dropping or going soft = overwatered. Pale or scorched patches = too much direct sun."
+  },
+  {
+    id: "oxalis", img: "Assets/Oxalis triangularis.jpg", name: "Purple Shamrock", latin: "Oxalis triangularis", emoji: "☘️", hue: 285,
+    lightLabel: "Bright, indirect + morning sun", light: 3, difficulty: "Easy", pets: "toxic",
+    waterDays: [7, 21],
+    intro: "Deep purple, butterfly-shaped leaves that fold up at night and open again in the morning.",
+    water: "Water when the top 2–3 cm are dry. When it goes dormant, cut back to almost nothing.",
+    humidity: "Average.",
+    temp: "15–25 °C",
+    feed: "Every 2–4 weeks while growing.",
+    soil: "Light, well-draining mix; shallow pots suit the bulbs.",
+    tips: ["It’s normal for it to die back for a few weeks (often after summer or winter). Keep the bulbs barely moist and wait.", "New leaves appear once the bulbs wake up — then water normally again.", "Weak, floppy growth means it needs more light."],
+    watch: "Leaves and bulbs contain oxalates and are toxic to cats and dogs."
+  },
+  {
+    id: "croton", img: "Assets/Codiaeum mix.jpg", name: "Croton", latin: "Codiaeum mix", emoji: "🍂", hue: 28,
+    lightLabel: "Very bright, some direct sun", light: 3, difficulty: "Fussy", pets: "toxic",
+    waterDays: [5, 9],
+    intro: "Leaves painted in green, yellow, orange and red. Needs a lot of light to keep its colours.",
+    water: "Water when the top 2–3 cm are dry — evenly moist but never waterlogged. Use lukewarm water.",
+    humidity: "High — mist, or put it near a humidifier or other plants.",
+    temp: "18–27 °C, not below 15 °C",
+    feed: "Every 2–4 weeks in spring and summer.",
+    soil: "Rich but well-draining potting mix.",
+    tips: ["The brighter the spot, the stronger the colours; low light turns the leaves green.", "Dropping leaves after a move or draft is common — keep it in a stable spot.", "Check for spider mites if leaves look dusty or speckled."],
+    watch: "Sap is toxic and can irritate skin — wear gloves when pruning. Keep away from cold windows and drafts."
+  }
+];
+
+/* ---------------- state ---------------- */
+const KEY = "myplants.v1";
+const safeGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+let watered = {};
+try { watered = JSON.parse(safeGet(KEY + ".watered") || "{}") || {}; } catch { watered = {}; }
+
+const month = new Date().getMonth(); // 0-11
+const autoSeason = (month >= 3 && month <= 8) ? "grow" : "rest";
+let season = safeGet(KEY + ".season") || autoSeason;
+let filter = "all";
+let query = "";
+
+/* ---------------- helpers ---------------- */
+const DAY = 86400000;
+const todayStart = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parseKey = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const interval = (p) => p.waterDays[season === "grow" ? 0 : 1];
+
+function info(p) {
+  const iv = interval(p);
+  const last = watered[p.id];
+  if (!last) return { iv, tracked: false, remaining: null };
+  const since = Math.round((todayStart() - parseKey(last)) / DAY);
+  return { iv, tracked: true, since, remaining: iv - since, last };
+}
+const statusOf = (i) => {
+  if (!i.tracked) return { cls: "idle", text: "Not tracked yet", pct: 0, bar: "" };
+  const r = i.remaining;
+  const pct = Math.min(100, Math.max(4, (i.since / i.iv) * 100));
+  if (r < 0)  return { cls: "bad",  text: `${-r} day${-r===1?"":"s"} overdue`, pct: 100, bar: "bad" };
+  if (r === 0) return { cls: "warn", text: "Check soil today", pct, bar: "warn" };
+  if (r === 1) return { cls: "warn", text: "Water tomorrow", pct, bar: "warn" };
+  return { cls: "ok", text: `Water in ${r} days`, pct, bar: "" };
+};
+const prettyDate = (key) => {
+  const diff = Math.round((todayStart() - parseKey(key)) / DAY);
+  if (diff === 0) return "Watered today";
+  if (diff === 1) return "Watered yesterday";
+  return `Watered ${diff} days ago`;
+};
+const sunIcons = (n) => "☀".repeat(n) + `<span style="opacity:.25">${"☀".repeat(3-n)}</span>`;
+
+/* ---------------- render ---------------- */
+function cardHTML(p) {
+  const i = info(p), s = statusOf(i), iv = i.iv;
+  return `
+  <article class="card" data-id="${p.id}">
+    <div class="hero${p.img ? " photo" : ""}" style="--h:${p.hue}"${p.img ? ` data-full="${encodeURI(p.img)}" data-name="${p.name}"` : ""}>
+      ${p.img ? `<img src="${encodeURI(p.img)}" alt="${p.name}" loading="lazy" style="object-position:${p.focus || "50% 50%"}"><div class="shade"></div>` : ""}
+      <div class="badges">
+        <span class="badge ${p.pets}">${p.pets === "safe" ? "🐾 Pet-safe" : "⚠️ Toxic to pets"}</span>
+      </div>
+      <div class="emoji" aria-hidden="true">${p.emoji}</div>
+    </div>
+    <div class="body">
+      <h2>${p.name}</h2>
+      <p class="latin">${p.latin}</p>
+      <p class="note-top">${p.intro}</p>
+      <div class="facts">
+        <div class="fact"><small>Light</small><span>${sunIcons(p.light)}</span><div style="font-size:.78rem;color:var(--ink-2)">${p.lightLabel}</div></div>
+        <div class="fact"><small>Water</small><span>💧 every ~${iv} days</span><div style="font-size:.78rem;color:var(--ink-2)">${season === "grow" ? "growing season" : "resting season"}</div></div>
+        <div class="fact"><small>Difficulty</small><span>${p.difficulty}</span></div>
+        <div class="fact"><small>Temperature</small><span>${p.temp}</span></div>
+      </div>
+    </div>
+
+    <div class="water">
+      <div class="water-head"><strong>Watering tracker</strong><span class="status ${s.cls}">${s.text}</span></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(s.pct)}" aria-label="Time since last watering"><i class="${s.bar}" style="width:${s.pct}%"></i></div>
+      <div class="water-actions">
+        <button class="btn" data-act="water">💧 Watered today</button>
+        ${i.tracked ? `<button class="btn ghost" data-act="reset" title="Clear this plant’s watering history">Reset</button>
+        <span class="last">${prettyDate(i.last)}</span>` : ""}
+      </div>
+    </div>
+
+    <details>
+      <summary>Full care guide</summary>
+      <div class="care">
+        <dl>
+          <div><dt>How to water</dt><dd>${p.water}</dd></div>
+          <div><dt>Humidity</dt><dd>${p.humidity}</dd></div>
+          <div><dt>Feeding</dt><dd>${p.feed}</dd></div>
+          <div><dt>Soil</dt><dd>${p.soil}</dd></div>
+          <div><dt>Tips</dt><dd><ul>${p.tips.map(t => `<li>${t}</li>`).join("")}</ul></dd></div>
+        </dl>
+        <div class="watch"><b>Watch out:</b> ${p.watch}</div>
+      </div>
+    </details>
+  </article>`;
+}
+
+function matches(p) {
+  const q = query.trim().toLowerCase();
+  if (q && !(`${p.name} ${p.latin}`.toLowerCase().includes(q))) return false;
+  const i = info(p);
+  switch (filter) {
+    case "due":   return i.tracked && i.remaining <= 0;
+    case "safe":  return p.pets === "safe";
+    case "easy":  return p.difficulty === "Easy";
+    case "fussy": return p.difficulty !== "Easy";
+    case "bright":return p.light === 3;
+    default: return true;
+  }
+}
+
+function render() {
+  // keep expanded cards open across re-renders
+  const open = new Set([...document.querySelectorAll("details[open]")].map(d => d.closest(".card").dataset.id));
+  const list = PLANTS.filter(matches);
+  const grid = document.getElementById("grid");
+  grid.innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty">No plants match that. 🌱</div>`;
+  open.forEach(id => { const d = grid.querySelector(`[data-id="${id}"] details`); if (d) d.open = true; });
+
+  // summary
+  const due = PLANTS.filter(p => { const i = info(p); return i.tracked && i.remaining <= 0; }).length;
+  const tracked = PLANTS.filter(p => watered[p.id]).length;
+  const safe = PLANTS.filter(p => p.pets === "safe").length;
+  document.getElementById("summary").innerHTML = `
+    <div class="stat"><b>${PLANTS.length}</b><span>plants in the family</span></div>
+    <div class="stat due ${due ? "" : "zero"}"><b>${due}</b><span>${due === 1 ? "plant" : "plants"} need${due === 1 ? "s" : ""} water${tracked ? "" : " (start tracking!)"}</span></div>
+    <div class="stat"><b>${tracked}/${PLANTS.length}</b><span>being tracked</span></div>
+    <div class="stat"><b>${safe}</b><span>pet-safe plants</span></div>`;
+
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.season === season));
+  document.querySelectorAll("#chips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.f === filter));
+}
+
+/* ---------------- events ---------------- */
+const FILTERS = [
+  ["all","All"], ["due","💧 Needs water"], ["bright","☀️ Bright light"],
+  ["easy","Easy going"], ["fussy","Needs attention"], ["safe","🐾 Pet-safe"]
+];
+document.getElementById("chips").innerHTML = FILTERS.map(([f, label]) =>
+  `<button type="button" class="chip" data-f="${f}" aria-pressed="false">${label}</button>`).join("");
+
+document.getElementById("chips").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  filter = c.dataset.f; render();
+});
+document.querySelector(".seg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  season = b.dataset.season; safeSet(KEY + ".season", season); render();
+});
+document.getElementById("search").addEventListener("input", e => { query = e.target.value; render(); });
+
+const lb = document.getElementById("lightbox");
+lb.addEventListener("click", () => lb.close());
+document.getElementById("grid").addEventListener("click", e => {
+  const ph = e.target.closest(".hero.photo");
+  if (ph) { lb.querySelector("img").src = ph.dataset.full; lb.querySelector("p").textContent = ph.dataset.name; lb.showModal(); return; }
+  const btn = e.target.closest("[data-act]"); if (!btn) return;
+  const id = btn.closest(".card").dataset.id;
+  if (btn.dataset.act === "water") watered[id] = dateKey(new Date());
+  if (btn.dataset.act === "reset") delete watered[id];
+  safeSet(KEY + ".watered", JSON.stringify(watered));
+  render();
+});
+
+/* theme */
+const root = document.documentElement;
+const savedTheme = safeGet(KEY + ".theme");
+if (savedTheme) root.dataset.theme = savedTheme;
+document.getElementById("theme").addEventListener("click", () => {
+  const isDark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = isDark ? "light" : "dark";
+  safeSet(KEY + ".theme", root.dataset.theme);
+});
+
+render();
+</script>
+</body>
+</html>
